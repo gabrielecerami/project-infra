@@ -1,0 +1,41 @@
+- name: Delete project for prow
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: absent
+    validate:
+      fail_on_error: yes
+      strict: yes
+    definition:
+      apiVersion: project.openshift.io/v1
+      kind: Project
+      metadata:
+        name: '{{ prowNamespace }}'
+      display_name: Prow
+      description: Prow for KubeVirt
+- name: Delete project for prow jobs
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: absent
+    definition:
+      apiVersion: project.openshift.io/v1
+      kind: Project
+      metadata:
+        name: '{{ prowJobsNamespace }}'
+      display_name: ProwJobs
+      description: Job namespace for Prow for KubeVirt
+- name: Delete kubeconfig secret for the remote cluster
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: absent
+    namespace: "{{ prowNamespace }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: remote-cluster-kubeconfig
+      type: Opaque
+      data:
+        kubeconfig: "{{ kubeconfig | b64encode }}"

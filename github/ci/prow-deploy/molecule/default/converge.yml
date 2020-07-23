@@ -1,0 +1,23 @@
+---
+- hosts: localhost
+  vars:
+    masterClusterContext: admin
+    prowNamespace: prow
+    prowJobsNamespace: prow-jobs
+    show_sensitive: true
+    prowUrl: "deck-prow.e8ca.engint.openshiftapps.com"
+    deckUrl: "api.crc.testing"
+    gcswebUrl: "api.crc.testing"
+    prowHmac: ""
+    githubToken: ""
+    appOAuthConfig: ""
+    appCookieSecret: ""
+    gcsServiceAccount: ""
+    slackToken: ""
+    prowAdmins: ""
+  tasks:
+    - include_vars:
+        file: '/home/{{ ansible_user }}/.crc/machines/crc/kubeconfig'
+        name: kubeconfig
+    - include_role:
+        name: prow-deploy

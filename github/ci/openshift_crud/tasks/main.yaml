@@ -1,0 +1,38 @@
+- name: Gather operations
+  set_fact:
+    operations: "{{ steps | selectattr('crud_operation', 'defined') | map(attribute='crud_operation') | list | unique }}"
+- name: Expand operations list with default operation
+  set_fact:
+    operations: "{{ operations + [default_crud_operation]}}"
+- name: Check existence of operation handlers
+  stat:
+    path: "{{ role_path }}/tasks/{{ operation }}.yaml"
+  loop: "{{ operations }}"
+  loop_control:
+    loop_var: operation
+  register: required_handlers
+
+- debug:
+    msg: "{{ required_handlers.results | subelements('stat.exists') }}"
+- fail:
+  when: required_handles.results | subelements() | selectattr("exists")
+
+- name: Apply manifest from each step
+  vars:
+    crud_operation: "{{ step.crud_operation|default(default_crud_operation) }}"
+    description: "{{ step.desc|default(crud_operation) }}"
+    project: "{{ step.project|default(default_project) }}"
+    context: "{{ step.context|default(default_context) }}"
+    fatal_validation: "{{ step.fatal_validation|default(default_fatal_validation) }}"
+    strict_validation: "{{ step.strict_validation|default(default_strict_validation) }}"
+    manifest_path: "{{ step.manifest_path|default('') }}"
+    manifest_template_path: "{{ step.manifest_template|default('') }}"
+    manifest: "{{ step.manifest|default('') }}"
+  include_tasks: handle_operation.yaml
+  loop: "{{ steps }}"
+  loop_control:
+    label: "{{ step.desc }}"
+    index_var: step_num
+    loop_var: step
+    extended: yes
+

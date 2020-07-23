@@ -1,0 +1,5 @@
+- verify version
+- verify pods are running
+  verify no pod has failed
+- verify batch jobs ?
+- verify a pull

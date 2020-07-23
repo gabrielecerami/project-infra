@@ -1,0 +1,12 @@
+- name: File gather
+  stat:
+    path: "{{ role_path }}/tasks/{{ crud_operation }}.yaml"
+  register: operation_stat
+
+- name: Checking operation handler for {{ crud_operation }}
+  fail:
+    msg: "Unknown operation {{ crud_operation }}"
+  when: not operation_stat.stat.exists
+
+- name: "Step {{ step_num + 1 }}/{{ ansible_loop.length }}: {{ description }}"
+  include_tasks: "{{ crud_operation }}.yaml"

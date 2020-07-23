@@ -1,0 +1,31 @@
+# Removed inline definitions and grouped command by namespace
+- name: Service setup on prowNamespace
+  no_log: not show_sensitive
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: present
+    namespace: "{{ prowNamespace }}"
+    validate:
+      fail_on_error: "{{ fatal_validation }}"
+      strict: yes
+    definition: "{{ lookup('template', '{{ role_path }}/{{ item.template }}') }}"
+  loop: "{{ deploy_steps }}"
+  loop_control:
+    label: "{{ item.step }}"
+
+- name: Deploy shared objects
+  vars:
+    targetKubeconfig: '{{ automationKubeconfig }}'
+    targetContext: '{{ masterClusterContext }}'
+    targetNamespace: '{{ prowJobsNamespace }}'
+  import_role:
+    name: shared-deployments
+- name: Deploy Prow jobs secrets
+  vars:
+    targetNamespace: '{{ prowJobsNamespace }}'
+    targetContext: '{{ masterClusterContext }}'
+    automationKubeconfig: '{{ automationKubeconfig }}'
+  import_role:
+    name: prow-jobs-secrets
+  no_log: true

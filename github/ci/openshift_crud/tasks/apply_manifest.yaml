@@ -1,0 +1,27 @@
+- debug:
+    var: crud_operation
+
+- set_fact:
+    definition: "{{ lookup('file', '{{ role_path }}/{{ step.manifest_path }}') }}"
+  when: manifest_path != ""
+- set_fact:
+    definition: "{{ lookup('template', '{{ role_path }}/{{ step.manifest_template_path }}') }}"
+  when: manifest_template_path != ""
+- set_fact:
+    definition: "{{ manifest }}"
+  when: manifest != ""
+- fail:
+    msg: "Invalid manifest source"
+  when: definition|default("") == ""
+
+- name: Apply manifest from each step
+  k8s:
+    kubeconfig: '{{ kubeconfig_path }}'
+    context: '{{ context }}'
+    state: present
+    namespace: "{{ project }}"
+    validate:
+      fail_on_error: "{{ fatal_validation }}"
+      strict: "{{ strict_validation }}"
+    definition: "{{ definition }}"
+  when: crud_operation == "apply_manifest"

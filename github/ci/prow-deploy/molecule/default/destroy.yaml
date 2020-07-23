@@ -1,0 +1,2 @@
+include_role: prow_deploy
+tasks_from: cleanup

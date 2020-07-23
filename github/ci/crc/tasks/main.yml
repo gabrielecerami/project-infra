@@ -1,0 +1,48 @@
+# Openshift v4.2.14
+crc_version: 1.5.0
+minimum_openshift:
+
+crc_url: "https://mirror.openshift.com/pub/openshift-v4/clients/crc/{{ crc_version }}/crc-linux-amd64.tar.xz"
+
+# Valuidations.yaml
+- name: make sure you have 25G available in your home
+  command:
+  register: space_ok
+- name: make sure you have sudo installed and sudo right for the operations
+  command: sudo
+  register: sudo_ok
+- name: make sure pull secret is present
+  stat:
+- name: Space
+  debug:
+    msg: Free more space
+  name: sudo
+  debug:
+    msg: install sudo
+- name: pull secret
+  debug:
+    msg: download your pull secret
+- name: fail validations
+  when: stat does not exist and not sudo_ok and not space_ok
+
+#- hosts: localhost
+
+# setup.yaml
+ -name: download CRC
+ command: curl
+- name: verivy sha256sum for integrity
+  command: 
+- name: Launch crc setup (will download other 9G and bring 1CPU to 100%)
+  command: ./crc setup
+- name: set pull secret file
+  command: ./crc config set pull-secret-file $secret
+- name: start crc ( this will take at least 5 minutes and will bring you CPU to 100% for a brief period of time, then settle to 50%-60% sustained load)
+  command: ./crc start
+
+# verify.yaml
+# CRC itself already verifies cluster has started.
+- name: verify cluster installation
+
+# setup kubeconfig file
+- name: Local setup
+  include_tasks: setup_local.yml

@@ -1,0 +1,185 @@
+periodics:
+- name: periodic-kubevirt-flakefinder-hourly-rolling-window-report
+  cron: "5 * * * *"
+  decorate: true
+  spec:
+    nodeSelector:
+      type: vm
+      zone: ci
+    containers:
+      - image: index.docker.io/kubevirtci/flakefinder@sha256:76bc7808037b8f04dea9a783a85b9abf62dce6c26b63c3e0b4145d0033450de9
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcs/service-account.json
+        command:
+          - "/app/robots/flakefinder/app.binary"
+        args:
+          - --dry-run=false
+          - --token=/etc/github/oauth
+          - --merged=24h
+          - --today=true
+          - --report_output_child_path=kubevirt/kubevirt
+        volumeMounts:
+          - name: token
+            mountPath: /etc/github
+          - name: gcs
+            mountPath: /etc/gcs
+            readOnly: true
+    volumes:
+      - name: token
+        secret:
+          secretName: oauth-token
+      - name: gcs
+        secret:
+          secretName: gcs
+- name: periodic-publish-kubevirt-flakefinder-weekly-report
+  cron: "45 0 * * *"
+  decorate: true
+  spec:
+    nodeSelector:
+      type: vm
+      zone: ci
+    containers:
+    - image: index.docker.io/kubevirtci/flakefinder@sha256:76bc7808037b8f04dea9a783a85b9abf62dce6c26b63c3e0b4145d0033450de9
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/gcs/service-account.json
+      command:
+      - "/app/robots/flakefinder/app.binary"
+      args:
+      - --dry-run=false
+      - --token=/etc/github/oauth
+      - --merged=168h
+      - --report_output_child_path=kubevirt/kubevirt
+      volumeMounts:
+      - name: token
+        mountPath: /etc/github
+      - name: gcs
+        mountPath: /etc/gcs
+        readOnly: true
+    volumes:
+    - name: token
+      secret:
+        secretName: oauth-token
+    - name: gcs
+      secret:
+        secretName: gcs
+- name: periodic-publish-kubevirt-flakefinder-daily-report
+  cron: "25 0 * * *"
+  decorate: true
+  spec:
+    nodeSelector:
+      type: vm
+      zone: ci
+    containers:
+    - image: index.docker.io/kubevirtci/flakefinder@sha256:76bc7808037b8f04dea9a783a85b9abf62dce6c26b63c3e0b4145d0033450de9
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/gcs/service-account.json
+      command:
+      - "/app/robots/flakefinder/app.binary"
+      args:
+      - --dry-run=false
+      - --token=/etc/github/oauth
+      - --merged=24h
+      - --report_output_child_path=kubevirt/kubevirt
+      volumeMounts:
+      - name: token
+        mountPath: /etc/github
+      - name: gcs
+        mountPath: /etc/gcs
+        readOnly: true
+    volumes:
+    - name: token
+      secret:
+        secretName: oauth-token
+    - name: gcs
+      secret:
+        secretName: gcs
+- name: periodic-publish-kubevirt-flakefinder-four-weekly-report
+  interval: 168h
+  decorate: true
+  spec:
+    nodeSelector:
+      type: vm
+      zone: ci
+    containers:
+    - image: index.docker.io/kubevirtci/flakefinder@sha256:76bc7808037b8f04dea9a783a85b9abf62dce6c26b63c3e0b4145d0033450de9
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/gcs/service-account.json
+      command:
+      - "/app/robots/flakefinder/app.binary"
+      args:
+      - --dry-run=false
+      - --token=/etc/github/oauth
+      - --merged=672h
+      - --report_output_child_path=kubevirt/kubevirt
+      volumeMounts:
+      - name: token
+        mountPath: /etc/github
+      - name: gcs
+        mountPath: /etc/gcs
+        readOnly: true
+    volumes:
+    - name: token
+      secret:
+        secretName: oauth-token
+    - name: gcs
+      secret:
+        secretName: gcs
+- name: periodic-kubevirt-push-nightly-build-master
+  cron: "2 1 * * *"
+  decorate: true
+  decoration_config:
+    timeout: 1h
+    grace_period: 5m
+  max_concurrency: 1
+  labels:
+    preset-dind-enabled: "true"
+    preset-docker-mirror: "true"
+    preset-shared-images: "true"
+    preset-kubevirtci-docker-credential: "true"
+  spec:
+    nodeSelector:
+      type: bare-metal-external
+    containers:
+    - image: gcr.io/k8s-testimages/bootstrap:v20190516-c6832d9
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/gcs/service-account.json
+      command:
+        - "/usr/local/bin/runner.sh"
+        - "/bin/sh"
+        - "-c"
+        - >
+          cat $DOCKER_PASSWORD | docker login --username $(cat $DOCKER_USER) --password-stdin &&
+          git clone https://github.com/kubevirt/kubevirt.git &&
+          cd kubevirt &&
+          export DOCKER_PREFIX='kubevirtnightlybuilds' &&
+          export DOCKER_TAG="$(date +%Y%m%d)_$(git show --format=%h)" &&
+          make &&
+          make push &&
+          git show --format=%H > _out/commit &&
+          build_date="$(date +%Y%m%d)" &&
+          echo ${build_date} > _out/build_date &&
+          bucket_dir="kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/${build_date}" &&
+          gsutil cp ./_out/manifests/release/kubevirt-operator.yaml gs://$bucket_dir/kubevirt-operator.yaml &&
+          gsutil cp ./_out/manifests/release/kubevirt-cr.yaml gs://$bucket_dir/kubevirt-cr.yaml &&
+          gsutil cp -r ./_out/manifests/testing gs://$bucket_dir/ &&
+          gsutil cp ./_out/commit gs://$bucket_dir/commit &&
+          gsutil cp ./_out/build_date gs://kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/latest
+      # docker-in-docker needs privileged mode
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          memory: "8Gi"
+      volumeMounts:
+        - name: gcs
+          mountPath: /etc/gcs
+          readOnly: false
+    volumes:
+      - name: gcs
+        secret:
+          secretName: gcs

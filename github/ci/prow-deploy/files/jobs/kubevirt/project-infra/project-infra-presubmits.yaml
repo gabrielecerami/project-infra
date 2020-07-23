@@ -1,0 +1,69 @@
+presubmits:
+  kubevirt/project-infra:
+  - name: check-prow-config
+    always_run: true
+    decorate: true
+    spec:
+      nodeSelector:
+        type: vm
+        zone: ci
+      containers:
+      - image: gcr.io/k8s-prow/checkconfig:v20200623-9f5410055c
+        args:
+        - "/checkconfig"
+        - "--config-path"
+        - "github/ci/prow/files/config.yaml"
+        - "--job-config-path"
+        - "github/ci/prow/files/jobs"
+        - "--plugin-config"
+        - "github/ci/prow/files/plugins.yaml"
+        - "--strict"
+        resources:
+          requests:
+            memory: "500Mi"
+  - name: pull-project-infra-test-flakefinder
+    run_if_changed: robots/flakefinder/.*
+    optional: false
+    decorate: true
+    spec:
+      nodeSelector:
+        type: vm
+        zone: ci
+      containers:
+      - image: golang:1.13
+        env:
+          - name: GO111MODULE
+            value: "on"
+          - name: XDG_CACHE_HOME
+            value: "/tmp/.cache"
+        command:
+          - go
+        args:
+          - test
+          - ./...
+  - name: build-kubevirt-infra-bootstrap-image
+    always_run: false
+    run_if_changed: "images/kubevirt-infra-bootstrap/.*"
+    decorate: true
+    labels:
+      preset-dind-enabled: "true"
+      preset-docker-mirror: "true"
+      preset-kubevirtci-docker-credential: "true"
+    spec:
+      nodeSelector:
+        type: vm
+      containers:
+        - image: gcr.io/k8s-testimages/bootstrap:v20190516-c6832d9
+          command:
+            - "/usr/local/bin/runner.sh"
+            - "/bin/bash"
+            - "-c"
+            - "cd images && ./publish_image.sh -b kubevirt-infra-bootstrap docker.io kubevirtci"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"

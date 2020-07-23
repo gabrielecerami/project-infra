@@ -1,0 +1,17 @@
+- hosts: localhost
+  vars:
+    kubeconfig_path: /home/{{ ansible_user }}/.crc/machines/crc/kubeconfig
+    default_context: admin
+    default_project: testing
+    steps:
+      - desc: Create Project
+        project_name: ciccio
+        crud_operation: create_project
+      - desc: Apply manifest 1
+        manifest_path: "molecule/files/manifests/test.yaml"
+      - desc: Apply manifest 2
+        manifest_path: "molecule/files/manifests/test.yaml"
+  tasks:
+    - name: Call role
+      include_role:
+        name: openshift_crud

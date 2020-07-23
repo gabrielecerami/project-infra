@@ -1,0 +1,24 @@
+---
+- name: Configure cluster
+  block:
+    #    - command: oc version -o yaml
+    #      register: oc_version
+    - set_fact:
+        deployment_apiVersion: apps/v1
+        project_apiVersion: project.openshift.io/v1
+        cronjob_apiVersion: batch/v1beta1
+      when: oc_version.result.openshiftVersion is version_compare("4.3", operator=">=")
+    - set_fact:
+        deployment_apiVersion: extensions/v1beta1
+        project_apiVersion: v1
+        cronjob_apiVersion: batch/v2alpha1
+      when: oc_version.result.openshiftVersion is version_compare("4.3", operator="<")
+
+    - include_tasks: setup_local.yml
+    - name: Cluter setup
+      include_tasks: setup_remote.yml
+    - include_tasks: main_deploy.yml
+      #    - wait: for deployment to complete.
+  always:
+    - name: cleaning up if needed
+      include_tasks: cleanup.yml

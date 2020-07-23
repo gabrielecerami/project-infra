@@ -1,0 +1,17 @@
+- name: Set automate kube config
+  # TODO(gcerami): Accept both a path or a config dict
+  set_fact:
+    automationKubeconfig: "{{ lookup('env', 'HOME') }}/.kube/kubevirt_automation.kubeconfig"
+- name: show kubeconfig
+  debug:
+    var: kubeconfig
+- name: Ensure user's .kube directory exists
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.kube"
+    state: directory
+    mode: '0750'
+- name: set automation content
+  copy:
+    content: "{{ kubeconfig }}"
+    dest: "{{ automationKubeconfig }}"
+    mode: '0600'

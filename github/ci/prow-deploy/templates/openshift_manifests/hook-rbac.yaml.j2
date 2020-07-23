@@ -1,0 +1,34 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "hook"
+rules:
+  - apiGroups:
+      - "prow.k8s.io"
+    resources:
+      - prowjobs
+    verbs:
+      - create
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - update
+      - get
+      - list
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "hook"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "hook"
+subjects:
+- kind: ServiceAccount
+  name: "hook"
+  namespace: "{{prowNamespace}}"

@@ -1,0 +1,117 @@
+oc_version:
+  result:
+    openshiftVersion: 4.5.1
+
+fatal_validation: no
+cleanup_remote: yes
+cleanup_local: yes
+
+deploy_steps:
+  - step: Create routes
+    template: "templates/openshift_manifests//routes.yaml.j2"
+  - step: Create Service Accounts
+    template: "files/openshift_manifests/accounts.yaml"
+# Don't seem to be idempotent
+  - step: Create Hmac secret
+    template: "templates/openshift_manifests//hmac-token.yaml.j2"
+  - step: Create OAuth secret in prow namespace
+    template: "templates/openshift_manifests//oauth-token.yaml.j2"
+  - step: Create OAuth Config
+    template: "templates/openshift_manifests//github-oauth-token.yaml.j2"
+  - step: Create OAuth Cookie
+    template: "templates/openshift_manifests//cookie.yaml.j2"
+  - step: Create GCS service account config in prow namespace
+    template: "templates/openshift_manifests//gcs.yaml.j2"
+# -- end non-idempotent
+  - step: Deploy limit range
+    template: "files/openshift_manifests/memory-defaults.yaml"
+  - step: Deploy the pushgateway
+    template: "templates/openshift_manifests//pushgateway.yaml.j2"
+  - step: Update the docker mirror config
+    template: "templates/openshift_manifests//mirror-config.yaml.j2"
+  - step: Deploy the docker mirror config
+    template: "files/openshift_manifests/mirror.yaml"
+  - step: Deploy docker mirror service
+    template: "files/openshift_manifests/mirror-service.yaml"
+  - step: Update prow config
+    template: "templates/openshift_manifests//config.yaml.j2"
+  - step: Update prow plugins config
+    template: "templates/openshift_manifests//plugins.yaml.j2"
+  - step: Update prow label-sync config
+    template: "templates/openshift_manifests//labels.yaml.j2"
+  - step: Deploy prow-hook-rbac
+    template: "templates/openshift_manifests//hook-rbac.yaml.j2"
+  - step: Deploy prow-hook
+    template: "templates/openshift_manifests//hook.yaml.j2"
+  - step: Deploy prow-hook-service
+    template: "files/openshift_manifests/hook-service.yaml"
+  - step: Deploy horologium-rbac
+    template: "templates/openshift_manifests//horologium-rbac.yaml.j2"
+  - step: Deploy horologium
+    template: "templates/openshift_manifests//horologium-deployment.yaml.j2"
+  - step: Deploy plank-rbac
+    template: "templates/openshift_manifests//plank-rbac.yaml.j2"
+  - step: Deploy plank
+    template: "templates/openshift_manifests//plank-deployment.yaml.j2"
+  - step: Deploy sinker-rbac
+    template: "templates/openshift_manifests//sinker-rbac.yaml.j2"
+  - step: Deploy sinker
+    template: "templates/openshift_manifests//sinker-deployment.yaml.j2"
+  - step: Deploy label-sync cron job for KubeVirt
+    template: "templates/openshift_manifests//label-sync-kubevirt.yaml.j2"
+  - step: Deploy label-sync cron job for nmstate
+    template: "templates/openshift_manifests//label-sync-nmstate.yaml.j2"
+  - step: Deploy needs-rebase
+    template: "templates/openshift_manifests//needs-rebase_deployment.yaml.j2"
+  - step: Deploy needs-rebase-service
+    template: "files/openshift_manifests/needs-rebase_service.yaml"
+  - step: Deploy cherrypicker
+    template: "templates/openshift_manifests//cherrypicker_deployment.yaml.j2"
+  - step: Deploy cherrypicker-service
+    template: "files/openshift_manifests/cherrypicker_service.yaml"
+  - step: Deploy release-blocker
+    template: "templates/openshift_manifests//release-blocker_deployment.yaml.j2"
+  - step: Deploy release-blocker-service
+    template: "files/openshift_manifests/release-blocker_service.yaml"
+  - step: Deploy prow-deck-rbac
+    template: "templates/openshift_manifests//deck-rbac.yaml.j2"
+  - step: Deploy prow-deck-service
+    template: "files/openshift_manifests/deck-service.yaml"
+  - step: Deploy prow-deck-deployment
+    template: "templates/openshift_manifests//deck-deployment.yaml.j2"
+  # Doesn't seem to be idempotent
+  - step: Create slack-token secret
+    template: "templates/openshift_manifests//slack-token.yaml.j2"
+  - step: Deploy crier-rbac
+    template: "templates/openshift_manifests//crier-rbac.yaml.j2"
+  - step: Deploy crier-deployment
+    template: "files/openshift_manifests/crier-deployment.yaml"
+  - step: Deploy gcsweb-service
+    template: "files/openshift_manifests/gcsweb-service.yaml"
+  - step: Deploy gcsweb-deployment
+    template: "templates/openshift_manifests//gcsweb-deployment.yaml.j2"
+  - step: Deploy prow-tide-rbac
+    template: "templates/openshift_manifests//tide-rbac.yaml.j2"
+  - step: Deploy prow-tide-service
+    template: "files/openshift_manifests/tide-service.yaml"
+  - step: Deploy prow-tide-deployment
+    template: "templates/openshift_manifests//tide-deployment.yaml.j2"
+  - step: Deploy prow-exporter-rbac
+    template: "templates/openshift_manifests//exporter-rbac.yaml.j2"
+  - step: Deploy prow-exporter-deployment
+    template: "templates/openshift_manifests//exporter-deployment.yaml.j2"
+  - step: Deploy prow-statusreconciler-rbac
+    template: "templates/openshift_manifests//statusreconciler-rbac.yaml.j2"
+  - step: Deploy prow-statusreconciler-deployment
+    template: "templates/openshift_manifests//statusreconciler-deployment.yaml.j2"
+  # Doesn't seem to be idempotent
+  - step: Deploy greenhouse-pvc
+    template: "files/openshift_manifests/greenhouse-pvc.yaml"
+  - step: Deploy greenhouse-deployment
+    template: "templates/openshift_manifests//greenhouse-deployment.yaml.j2"
+  - step: Deploy greenhouse-service
+    template: "files/openshift_manifests/greenhouse-service.yaml"
+  - step: Deploy ghproxy
+    template: "templates/openshift_manifests//ghproxy.yaml.j2"
+  - step: Deploy branch-protector cron job
+    template: "files/openshift_manifests/branch-protector.yaml"

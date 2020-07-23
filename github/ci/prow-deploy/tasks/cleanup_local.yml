@@ -1,0 +1,4 @@
+- name: Clean temporary kubeconfig
+  file:
+    path: '{{ automationKubeconfig }}'
+    state: absent

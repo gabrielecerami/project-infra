@@ -1,0 +1,46 @@
+- name: Create project for prow
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: present
+    validate:
+      fail_on_error: yes
+      strict: yes
+    definition:
+      apiVersion: "{{ project_apiVersion }}"
+      kind: project
+      metadata:
+        name: '{{ prowNamespace }}'
+      # TODO: add component group somewwhere
+      display_name: Prow
+      description: Prow for KubeVirt
+- name: Create a kubeconfig secret for the remote cluster
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: present
+    namespace: "{{ prowNamespace }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: remote-cluster-kubeconfig
+      type: Opaque
+      data:
+        kubeconfig: "{{ kubeconfig | b64encode }}"
+  no_log: not show_sensitive|bool
+- name: Create project for prow jobs
+  k8s:
+    kubeconfig: '{{ automationKubeconfig }}'
+    context: '{{ masterClusterContext }}'
+    state: present
+    validate:
+      fail_on_error: yes
+      strict: yes
+    definition:
+      apiVersion: "{{ project_apiVersion }}"
+      kind: Project
+      metadata:
+        name: '{{ prowJobsNamespace }}'
+      display_name: ProwJobs
+      description: Job namespace for Prow for KubeVirt

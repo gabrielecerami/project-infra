@@ -1,0 +1,42 @@
+apiVersion: {{ deployment_apiVersion }}
+kind: Deployment
+metadata:
+  name: pushgateway
+  labels:
+    app: pushgateway
+spec:
+  replicas: 1
+{% if deployment_apiVersion == "apps/v1" %}
+  selector:
+    matchLabels:
+      app: pushgateway
+{% endif %}
+  template:
+    metadata:
+      labels:
+        app: pushgateway
+    spec:
+      nodeSelector:
+        type: vm
+        zone: ci
+      containers:
+      - name: pushgateway
+        image: prom/pushgateway:v0.7.0
+        ports:
+          - name: http
+            containerPort: 9091
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pushgateway
+  labels:
+    app: pushgateway
+    metrics: "true"
+spec:
+  ports:
+  - name: pushgateway
+    port: 80
+    targetPort: http
+  selector:
+    app: pushgateway

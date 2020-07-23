@@ -1,0 +1,51 @@
+apiVersion: {{ deployment_apiVersion }}
+kind: Deployment
+metadata:
+  name: sinker
+  labels:
+    app: sinker
+spec:
+  replicas: 1
+{% if deployment_apiVersion == "apps/v1" %}
+  selector:
+    matchLabels:
+      app: sinker
+{% endif %}
+  template:
+    metadata:
+      labels:
+        app: sinker
+    spec:
+      nodeSelector:
+        type: vm
+        zone: ci
+      serviceAccountName: "sinker"
+      containers:
+      - name: sinker
+        args:
+        - --config-path=/etc/config/config.yaml
+        - --job-config-path=/etc/job-config
+        - --dry-run=false
+        - --kubeconfig=/etc/remote_cluster_config/kubeconfig
+        image: gcr.io/k8s-prow/sinker:v20200623-9f5410055c
+        volumeMounts:
+        - name: config
+          mountPath: /etc/config
+          readOnly: true
+        - name: job-config
+          mountPath: /etc/job-config
+          readOnly: true
+        - name: remote-cluster-kubeconfig
+          mountPath: /etc/remote_cluster_config
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: config
+      - name: job-config
+        configMap:
+          name: job-config
+      - name: remote-cluster-kubeconfig
+        secret:
+          defaultMode: 0644
+          secretName: remote-cluster-kubeconfig

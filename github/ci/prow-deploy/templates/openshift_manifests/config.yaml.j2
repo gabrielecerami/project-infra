@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  config.yaml: |
+{{ lookup('file', '{{ role_path }}/files/openshift_manifests/config.yaml') | indent(width=4, indentfirst=True) }}

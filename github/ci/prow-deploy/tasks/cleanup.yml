@@ -1,0 +1,10 @@
+# Especially useful on local testing, where we don't want to
+# reprovision the whole cluster each time
+- name: Cluster cleanup
+  include_tasks: cleanup_remote.yml
+  when: cleanup_remote
+- name: Local cleanup
+  include_tasks: cleanup_local.yml
+  when: cleanup_local
+
+
